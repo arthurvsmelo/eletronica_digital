@@ -1,0 +1,52 @@
+TITLE "Contador síncrono de 1 bit crescente/decrescente 0 e 1";
+
+-- contador de 1 bit que conta apenas 0 e 1
+
+PARAMETERS(
+	start_value = 0                              -- 0 ou 1
+);
+
+SUBDESIGN counter_1bit01
+(
+	clock, clear, load, enable, dir, din :INPUT;	-- portas de entrada (dir: direction up-HIGH/down-LOW)
+	q[3..0], ct :OUTPUT;                         -- saída do contador de 1 bit, indicador de término de contagem
+)
+
+VARIABLE
+	count :DFF;                                  -- célula de contagem com flip flop tipo D
+ 
+BEGIN
+	DEFAULTS
+		q[3..0] = start_value; 
+		ct = GND;
+	END DEFAULTS;
+	
+	count.clk = clock;                           -- conexão síncrona dos clocks
+	count.clrn = !clear;                         -- clear assíncrono ativo em HIGH
+ 
+	IF load THEN 
+		count.d = din;  	                        -- carga síncrona
+ 
+	ELSIF !enable THEN 
+		count.d = count.q;     	                  -- mantém a contagem enquanto enable for LOW
+ 
+	ELSE count.d = !count.q;                     -- troca o estado do flip-flop 
+ 
+	END IF;
+ 
+	IF count.q & dir & enable THEN					-- verifica a contagem crescente
+		count.d = GND;
+		ct = VCC;
+	ELSIF !count.q & !dir & enable THEN 			-- verifica a contagem decrescente	      
+		count.d = VCC;
+		ct = VCC;                                                   			   
+	ELSE 
+		ct = GND;
+	END IF;
+ 
+	q3 = GND;
+	q2 = GND;                             			-- saída do contador
+	q1 = GND;
+	q0 = count.q;
+ 
+END;
