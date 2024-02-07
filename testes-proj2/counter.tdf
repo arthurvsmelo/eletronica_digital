@@ -1,0 +1,53 @@
+
+CONSTANT up_limit = 1600;
+CONSTANT down_limit = 540;
+CONSTANT step_cnt = 10;
+CONSTANT n = (CEIL(LOG2(up_limit)) - 1);
+
+SUBDESIGN counter
+(
+	clock : INPUT; 										-- Clock input
+	ena : INPUT = VCC;									-- counter enable
+	clrn : INPUT = VCC;									-- Clear		
+	q[n..0] : OUTPUT;	                           -- Binary output
+	data_in[n..0]: INPUT;
+	load_enable: INPUT = GND;							-- Load enable
+	updown: INPUT = VCC;
+)
+VARIABLE
+	count[n..0]: DFF;
+	
+BEGIN
+
+	DEFAULTS
+		count[].d = down_limit;
+	END DEFAULTS;		
+	
+	count[].clk = clock;
+	 
+	IF load_enable == VCC THEN
+		count[].d = data_in[];
+		
+		ELSIF clrn == GND THEN
+			count[].d = down_limit;
+			
+		ELSIF ena == GND THEN
+			count[].d = count[].q;
+			
+		ELSIF (updown == VCC) & (count[].q < up_limit) THEN
+			count[].d = count[].q + step_cnt;
+		
+		ELSIF (updown == VCC) & (count[].q == up_limit) THEN
+			count[].d = down_limit;
+		
+		ELSIF (updown == GND) & (count[].q == down_limit) THEN
+			count[].d = up_limit;
+		
+		ELSE 
+			count[].d = count[].q - step_cnt;
+		
+	END IF;
+	
+	q[] = count[].q;
+	
+END;

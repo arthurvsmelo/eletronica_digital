@@ -1,0 +1,49 @@
+PARAMETERS(    
+	up_limit = 25000000,
+	down_limit = 0,
+	up = 1,
+	load = 0
+);
+
+SUBDESIGN counter
+(
+	clock : INPUT; 										-- Clock input
+	ena : INPUT = VCC;									-- counter enable
+	clrn : INPUT = VCC;									-- Clear		
+	q[(CEIL(LOG2(up_limit)) - 1)..0] : OUTPUT;	-- Binary output
+	load_enable: INPUT = GND;							-- Load enable
+)
+VARIABLE
+	count[(CEIL(LOG2(up_limit)) - 1)..0]: dff;
+BEGIN
+	DEFAULTS
+		q[] = down_limit;
+		count[].d = down_limit;
+	END DEFAULTS;
+		
+	count[].clk = clock;
+	 
+	IF load_enable THEN
+		count[].d = load;
+		
+		ELSIF !ena THEN
+			count[].d = count[].q;
+			
+		ELSIF up THEN
+			count[].d = count[].q + 1;
+			
+		ELSE
+			count[].d = count[].q - 1;
+			
+		END IF;	
+				
+	IF (count[].q == up_limit) & up & ena THEN
+		count[].d = down_limit;
+	END IF;
+
+	IF (count[].q == down_limit) & !up & ena THEN
+		count[].d = up_limit;
+	END IF;	
+
+	q[] = count[].q;
+END;
